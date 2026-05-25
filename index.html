@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Neoclouds and AI Infrastructure — P1 Ventures</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--ink:#1a1917;--ink2:#4a4845;--ink3:#8a8784;--ink4:#b8b5b0;--paper:#f7f5f0;--paper2:#efede8;--paper3:#e5e2db;--rule:#d8d4cc;--blue:#1a4fa0;--blue-l:rgba(26,79,160,0.18);--mena:#6b3fa0;--mena-l:rgba(107,63,160,0.18);--teal:#0d7a5f;--teal-l:rgba(13,122,95,0.18);--red:#b83030;--red-l:rgba(184,48,48,0.18);--f1:#c0622a;--f1l:rgba(192,98,42,0.11);--f2:#1a4fa0;--f2l:rgba(26,79,160,0.11);--f3:#1a8c60;--f3l:rgba(26,140,96,0.11);}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.75;max-width:800px;margin:0 auto;padding:64px 40px 120px;}
+h1{font-size:30px;font-weight:500;line-height:1.15;margin-bottom:6px;}
+h2{font-size:18px;font-weight:500;margin:3rem 0 .7rem;padding-top:2rem;border-top:1px solid var(--rule);}
+h2.no-rule{border-top:none;margin-top:0;padding-top:0;}
+h2.hl{border-top-width:2px;}
+h2.hl-latency{border-top-color:var(--f1);}
+h2.hl-sovereign{border-top-color:var(--f2);}
+h2.hl-serverless{border-top-color:var(--f3);}
+h3{font-size:14px;font-weight:500;margin:1.75rem 0 .35rem;color:var(--ink);}
+p{color:var(--ink2);margin-bottom:.85rem;}
+sup{font-size:10px;color:var(--ink4);}
+strong{font-weight:500;color:var(--ink);}
+.page-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:52px;padding-bottom:20px;border-bottom:1.5px solid var(--ink);}
+.pub-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;}
+.pub-date{font-size:11px;color:var(--ink4);font-family:'DM Mono',monospace;}
+hr.div{border:none;border-top:1px solid var(--rule);margin:2.5rem 0;}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:1.5rem 0;}
+.stat{background:var(--paper2);border-radius:8px;padding:.85rem 1rem;}
+.stat-label{font-size:10px;color:var(--ink4);font-family:'DM Mono',monospace;margin-bottom:3px;}
+.stat-val{font-size:20px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.stat-src{font-size:10px;color:var(--ink4);}
+.chart-block{margin:1.75rem 0;}
+.chart-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.chart-sub{font-size:11px;color:var(--ink3);margin-bottom:12px;}
+.chart-source{font-size:10px;color:var(--ink4);margin-top:7px;}
+.legend{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);}
+.leg-sw{width:14px;height:8px;border-radius:2px;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;margin:1.25rem 0;font-size:13px;}
+th{font-size:10px;font-weight:500;color:var(--ink3);text-align:left;padding:6px 10px;border-bottom:.5px solid var(--rule);font-family:'DM Mono',monospace;letter-spacing:.04em;}
+td{padding:8px 10px;border-bottom:.5px solid var(--paper3);color:var(--ink2);vertical-align:top;line-height:1.4;}
+tr:last-child td{border-bottom:none;}
+td:first-child{font-weight:500;color:var(--ink);}
+.econ{background:var(--paper2);border-radius:8px;padding:.9rem 1.1rem;margin:1.25rem 0;}
+.econ-label{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);font-family:'DM Mono',monospace;margin-bottom:5px;}
+.econ p{font-size:13px;color:var(--ink2);margin:0;}
+.focus-badge{display:inline-flex;align-items:center;font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:3px;margin-bottom:10px;}
+.bl{background:var(--f1l);color:var(--f1);}
+.bs{background:var(--f2l);color:var(--f2);}
+.bp{background:var(--f3l);color:var(--f3);}
+
+/* ── Stack capability diagram ── */
+.cap-diagram{margin:1.75rem 0;}
+.cap-axis{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cap-axis-line{flex:1;height:1px;background:linear-gradient(to right,var(--paper3),var(--ink4));}
+.cap-axis-lo,.cap-axis-hi{font-size:9px;color:var(--ink4);font-family:'DM Mono',monospace;white-space:nowrap;}
+.cap-cols{display:flex;gap:3px;}
+.cap-group{display:flex;flex-direction:column;flex:1;}
+.cap-group-cols{display:flex;gap:3px;flex:1;}
+.cap-col{flex:1;display:flex;flex-direction:column;gap:3px;}
+.cap-cell{height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.cap-label{font-size:8.5px;color:var(--ink4);font-family:'DM Mono',monospace;text-align:center;margin-top:4px;line-height:1.3;}
+.cap-group-label{font-size:8px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4);font-family:'DM Mono',monospace;text-align:center;padding:3px 4px;border-top:1px solid var(--rule);margin-top:6px;}
+.g-phys .cap-cell{background:#F1EFE8;border:0.5px solid #5f5e5a;}
+.g-compute .cap-cell{background:#FAEEDA;border:0.5px solid #ba7517;}
+.g-model .cap-cell{background:#E6F1FB;border:0.5px solid #1a4fa0;}
+.g-inf .cap-cell{background:#F0EAFA;border:0.5px solid #6b3fa0;}
+.g-dev .cap-cell{background:#E8F5EE;border:0.5px solid #0d7a5f;}
+.cap-icon{font-size:13px;}
+
+/* ── Archetype cards ── */
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:1.5rem 0;}
+.arch-card{background:var(--paper2);border:.5px solid var(--rule);border-radius:8px;padding:14px 16px 12px;}
+.arch-card.foc{background:white;}
+.arch-name{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:3px;}
+.arch-desc{font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:10px;}
+.mini-bar{display:flex;gap:2px;height:7px;}
+.ms{flex:1;height:7px;border-radius:2px;}
+.ms-f{background:var(--ink2);}
+.ms-p{background:var(--paper3);border:1px solid var(--ink4);border-radius:2px;}
+.ms-n{background:var(--paper3);}
+.mini-labels{display:flex;gap:2px;margin-top:4px;}
+.mini-labels span{flex:1;font-size:7px;color:var(--ink4);font-family:'DM Mono',monospace;text-align:center;overflow:hidden;}
+
+/* ── Matrix ── */
+.mat-header{display:flex;align-items:flex-end;margin-left:190px;border-bottom:.5px solid var(--rule);padding-bottom:8px;}
+.col-head{flex:1;font-size:9px;font-family:'DM Mono',monospace;color:var(--ink3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);height:84px;display:flex;align-items:center;justify-content:center;white-space:nowrap;}
+.axis-row{display:flex;align-items:center;margin-left:190px;padding:5px 0 10px;}
+.axis-track{flex:1;height:1.5px;background:linear-gradient(to right,var(--paper3),var(--ink4));}
+.axis-lo,.axis-hi{font-size:9px;color:var(--ink4);font-family:'DM Mono',monospace;white-space:nowrap;}
+.axis-lo{margin-right:8px;}.axis-hi{margin-left:8px;}
+.group-label{font-size:9px;font-weight:500;color:var(--ink4);letter-spacing:.1em;text-transform:uppercase;font-family:'DM Mono',monospace;padding:12px 0 4px;border-bottom:.5px solid var(--paper3);}
+.data-row{display:flex;align-items:center;height:34px;border-bottom:.5px solid var(--paper3);}
+.data-row:last-of-type{border-bottom:none;}
+.row-name{width:190px;min-width:190px;font-size:11.5px;color:var(--ink);padding-right:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;}
+.bar-track{flex:1;display:flex;height:34px;align-items:center;gap:2px;}
+.seg{flex:1;height:9px;border-radius:2px;}
+.seg-full{background:var(--blue);}
+.seg-part{background:var(--blue-l);border:1px solid var(--blue);border-radius:2px;}
+.seg-none{background:var(--paper3);}
+.g-mena .seg-full{background:var(--mena);}.g-mena .seg-part{background:var(--mena-l);border-color:var(--mena);}
+.g-af .seg-full{background:var(--teal);}.g-af .seg-part{background:var(--teal-l);border-color:var(--teal);}
+.g-asw .seg-full{background:var(--red);}.g-asw .seg-part{background:var(--red-l);border-color:var(--red);}
+.mat-legend{display:flex;gap:18px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+.ml-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink3);}
+.ml-sw{width:18px;height:8px;border-radius:2px;flex-shrink:0;}
+.ml-sep{width:1px;height:14px;background:var(--rule);}
+
+/* ── Company pills ── */
+.co-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--paper2);
+  border:0.5px solid var(--rule);
+  border-radius:20px;
+  padding:3px 10px 3px 8px;
+  font-size:12.5px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);font-weight:500;
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+  white-space:nowrap;
+  margin:2px 0;
+  vertical-align:middle;
+}
+.co-pill:hover{background:var(--paper3);border-color:var(--ink4);}
+.co-pill:focus{outline:2px solid var(--blue);outline-offset:2px;}
+.co-pill-arrow{font-size:10px;color:var(--ink4);}
+.co-pill.latency{border-color:rgba(192,98,42,0.4);background:var(--f1l);}
+.co-pill.sovereign{border-color:rgba(26,79,160,0.35);background:var(--f2l);}
+.co-pill.serverless{border-color:rgba(26,140,96,0.35);background:var(--f3l);}
+
+/* ── Company drawer ── */
+.co-drawer-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.25);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;z-index:100;
+}
+.co-drawer-overlay.open{opacity:1;pointer-events:all;}
+.co-drawer{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--paper);
+  border-top:1px solid var(--rule);
+  border-radius:12px 12px 0 0;
+  padding:20px 28px 32px;
+  max-width:800px;margin:0 auto;
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  z-index:101;max-height:65vh;overflow-y:auto;
+}
+.co-drawer.open{transform:translateY(0);}
+.co-drawer-handle{width:36px;height:4px;background:var(--paper3);border-radius:2px;margin:0 auto 16px;}
+.co-drawer-tag{font-size:10px;color:var(--ink3);background:var(--paper2);border-radius:3px;padding:2px 8px;font-family:'DM Mono',monospace;display:inline-block;margin-bottom:8px;}
+.co-drawer-name{font-size:17px;font-weight:500;color:var(--ink);margin-bottom:10px;}
+.co-drawer-body{font-size:13.5px;color:var(--ink2);line-height:1.65;margin-bottom:10px;}
+.co-drawer-meta{font-size:11px;color:var(--ink4);font-family:'DM Mono',monospace;line-height:1.6;}
+.co-drawer-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:18px;color:var(--ink3);cursor:pointer;padding:4px 8px;border-radius:4px;}
+.co-drawer-close:hover{background:var(--paper2);}
+
+/* ── References ── */
+.refs{margin-top:3rem;border-top:.5px solid var(--rule);padding-top:1rem;}
+.refs p{font-size:11px;color:var(--ink4);margin-bottom:3px;line-height:1.5;}
+.slabel{font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);font-family:'DM Mono',monospace;margin-bottom:6px;}
+</style>
+</head>
+<body style="outline: none;">
+
+<!-- DRAWER OVERLAY -->
+<div class="co-drawer-overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="co-drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-name">
+  <div class="co-drawer-handle"></div>
+  <button class="co-drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+  <div class="co-drawer-tag" id="drawer-tag"></div>
+  <div class="co-drawer-name" id="drawer-name"></div>
+  <div class="co-drawer-body" id="drawer-body"></div>
+  <div class="co-drawer-meta" id="drawer-meta"></div>
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+<div>
+<div class="pub-label">P1 Ventures</div>
+<h1>Neoclouds and<br>AI Infrastructure</h1>
+<div class="pub-label" style="margin-top:6px;color:var(--ink3);">A market map</div>
+</div>
+<div class="pub-date">May 2026</div>
+</div>
+
+<!-- OVERVIEW -->
+<h2 class="no-rule">Overview</h2>
+<p></p><p style="color: rgb(74, 72, 69);"></p><p style="color: rgb(74, 72, 69);">Every commodity boom starts with a genuine supply shock. In late 2022, demand for GPU capacity began expanding faster than any existing provider could meet it. Hyperscalers had neither the inventory nor the procurement agility to respond quickly, and the gap between what AI compute cost and what the market would pay was large enough to attract a new category of operator. Neoclouds — cloud providers built around GPU capacity — filled that gap. In Q2 2025 their quarterly revenues passed $5 billion, a 205% year-on-year increase.<sup style="color: rgb(184, 181, 176);">2</sup> Analyst estimates for 2030 annual revenues range from $65 billion to $180 billion depending on category definition; the average across four forecasts is approximately $110 billion.<sup style="color: rgb(184, 181, 176);">3,4,5,6</sup></p><p style="color: rgb(74, 72, 69);">The pricing arbitrage that created the category is straightforward. Hyperscalers price GPU capacity across a broad service portfolio and at margins calibrated to their full cost structure. Neoclouds price to fill GPU racks. An H100 DGX instance runs approximately $34 per hour from a neocloud versus $98 per hour from a major hyperscaler — the same hardware at a 65% discount.<sup style="color: rgb(184, 181, 176);">1</sup> One third of all AI workloads now run outside the major cloud platforms as a result.<sup style="color: rgb(184, 181, 176);">7</sup></p><p style="color: rgb(74, 72, 69);">What this document argues is that the category follows the same arc as other commodity industries: the supply shock attracts capital and innovation, both of which expand supply, which compresses the pricing gap that justified the investment. That does not mean neoclouds disappear. It means the business models that depend on scarcity will consolidate, and the ones that do not depend on it will remain. The sections that follow map the landscape and identify where we see durable positions.</p><p style="color: rgb(74, 72, 69);"></p><p></p>
+
+<div class="stat-row">
+<div class="stat"><div class="stat-label">Revenue 2025E</div><div class="stat-val">$23B+</div><div class="stat-src">Synergy Research [2]</div></div>
+<div class="stat"><div class="stat-label">Revenue 2030E (avg.)</div><div class="stat-val">~$110B</div><div class="stat-src">Triangulated [3–6]</div></div>
+<div class="stat"><div class="stat-label">H100 price gap</div><div class="stat-val">−65%</div><div class="stat-src">vs hyperscaler on-demand [1]</div></div>
+</div>
+
+<div class="chart-block">
+<div class="chart-title">Neocloud revenue trajectory</div>
+<div class="chart-sub">Annual revenue 2022–2030E ($ billions). Shaded bars are projected.</div>
+<div style="position:relative;height:200px;"><canvas id="revChart" width="1440" height="400" style="display: block; box-sizing: border-box; height: 200px; width: 720px;"></canvas></div>
+<div class="legend">
+<span class="leg"><span class="leg-sw" style="background:#1a4fa0;"></span>Reported / estimated</span>
+<span class="leg"><span class="leg-sw" style="background:rgba(26,79,160,0.22);border:1px solid #1a4fa0;"></span>Projected</span>
+</div>
+<div class="chart-source">Sources: Synergy Research, ABI Research, Gartner, CoreWeave S-1. 2030 is the average of four analyst estimates ranging from $65B to $180B.</div>
+</div>
+
+<!-- STRUCTURE -->
+<h2>How the market is structured</h2>
+
+<p>A company in this market occupies some contiguous portion of a ten-column capability stack, running from physical infrastructure on the left to developer tooling on the right. Customers interact with the market at whatever abstraction level they need: a hyperscaler might lease raw power capacity; a startup building a voice agent might call a serverless inference API. The same GPU hardware sits underneath both. What differs is how many layers of software and service separate the customer from that hardware.</p>
+
+<div class="cap-diagram">
+  <div class="cap-axis">
+    <span class="cap-axis-lo">← low abstraction / physical</span>
+    <div class="cap-axis-line"></div>
+    <span class="cap-axis-hi">high abstraction / software →</span>
+  </div>
+  <div class="cap-cols">
+    <!-- Group: Physical -->
+    <div class="cap-group g-phys" style="flex:2;">
+      <div class="cap-group-cols">
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">⚡</span></div><div class="cap-label">Energy &amp;<br>power</div></div>
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🏛</span></div><div class="cap-label">Data<br>center</div></div>
+      </div>
+      <div class="cap-group-label">Physical</div>
+    </div>
+    <div style="width:6px;flex-shrink:0;"></div>
+    <!-- Group: Compute -->
+    <div class="cap-group g-compute" style="flex:2;">
+      <div class="cap-group-cols">
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🧮</span></div><div class="cap-label">Bare-metal<br>GPU</div></div>
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🖧</span></div><div class="cap-label">Cluster<br>orch.</div></div>
+      </div>
+      <div class="cap-group-label">Raw compute</div>
+    </div>
+    <div style="width:6px;flex-shrink:0;"></div>
+    <!-- Group: Model dev -->
+    <div class="cap-group g-model" style="flex:2;">
+      <div class="cap-group-cols">
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🧠</span></div><div class="cap-label">Model<br>training</div></div>
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🔧</span></div><div class="cap-label">Fine-<br>tuning</div></div>
+      </div>
+      <div class="cap-group-label">Model development</div>
+    </div>
+    <div style="width:6px;flex-shrink:0;"></div>
+    <!-- Group: Inference -->
+    <div class="cap-group g-inf" style="flex:3;">
+      <div class="cap-group-cols">
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">⚡</span></div><div class="cap-label">Latency<br>inference</div></div>
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">📡</span></div><div class="cap-label">Inference<br>API</div></div>
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">☁</span></div><div class="cap-label">Serverless<br>GPU</div></div>
+      </div>
+      <div class="cap-group-label">Inference &amp; serving</div>
+    </div>
+    <div style="width:6px;flex-shrink:0;"></div>
+    <!-- Group: Dev -->
+    <div class="cap-group g-dev" style="flex:1;">
+      <div class="cap-group-cols">
+        <div class="cap-col"><div class="cap-cell"><span class="cap-icon">🛠</span></div><div class="cap-label">Dev<br>tooling</div></div>
+      </div>
+      <div class="cap-group-label">Tooling</div>
+    </div>
+  </div>
+  <p style="font-size:10px;color:var(--ink4);margin-top:10px;font-family:'DM Mono',monospace;">The ten columns above map directly to the company matrix below. Each bar in the matrix shows which capabilities a given company operates as a core or partial product.</p>
+</div>
+
+<p>The market has produced nine distinct archetypes, each representing a coherent business model — a combination of capabilities, an economic structure, and a defensibility argument. Three — latency specialists, sovereign clouds, and serverless platforms — are covered in depth.</p>
+
+<div class="arch-grid">
+<div class="arch-card">
+<div class="arch-name">Power Landlord</div>
+<div class="arch-desc">Owns energy capacity and data center real estate. Leases physical space and power to GPU operators on long-term contracts.</div>
+<div class="mini-bar"><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card">
+<div class="arch-name">GPU Wholesaler</div>
+<div class="arch-desc">Buys or leases GPU fleets and rents raw compute by the hour. Competes on cluster size, InfiniBand networking, and price per GPU-hour.</div>
+<div class="mini-bar"><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card">
+<div class="arch-name">AI Cloud Platform</div>
+<div class="arch-desc">Owns the full stack from physical infrastructure to managed inference. The direction the broader market is consolidating toward.</div>
+<div class="mini-bar"><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card">
+<div class="arch-name">Inference Retailer</div>
+<div class="arch-desc">Commits to wholesale GPU capacity at fixed rates and resells inference per-token. Margin is the spread multiplied by utilisation.</div>
+<div class="mini-bar"><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card">
+<div class="arch-name">Access Aggregator</div>
+<div class="arch-desc">Aggregates idle or distributed GPU capacity from multiple owners. No owned infrastructure. Competes on supply breadth and price.</div>
+<div class="mini-bar"><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-f"></div><div class="ms ms-p"></div><div class="ms ms-p"></div><div class="ms ms-p"></div><div class="ms ms-n"></div><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card foc" style="border-color:var(--f1);border-left:3px solid var(--f1);">
+<div class="focus-badge bl">Covered in depth</div>
+<div class="arch-name">Latency Specialist</div>
+<div class="arch-desc">Optimises time-to-first-token through custom silicon or software-native serving. Targets voice AI, video, and real-time agent applications.</div>
+<div class="mini-bar"><div class="ms ms-n"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card foc" style="border-color:var(--f2);border-left:3px solid var(--f2);">
+<div class="focus-badge bs">Covered in depth</div>
+<div class="arch-name">Sovereign Cloud</div>
+<div class="arch-desc">Full stack within a single jurisdiction. Data residency and regulatory compliance are the differentiator. Insulated from commodity dynamics.</div>
+<div class="mini-bar"><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card foc" style="border-color:var(--f3);border-left:3px solid var(--f3);">
+<div class="focus-badge bp">Covered in depth</div>
+<div class="arch-name">Serverless Platform</div>
+<div class="arch-desc">Full abstraction: fine-tuning and inference as code. Competes on developer experience, cold start performance, and tooling ecosystem depth.</div>
+<div class="mini-bar"><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div><div class="ms ms-f"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+<div class="arch-card">
+<div class="arch-name">Regional Access Point</div>
+<div class="arch-desc">Provides affordable GPU access in markets where hyperscaler pricing or dollar-denominated rates are a barrier. Minimal software layer.</div>
+<div class="mini-bar"><div class="ms ms-n"></div><div class="ms ms-p"></div><div class="ms ms-f"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div><div class="ms ms-n"></div></div>
+<div class="mini-labels"><span>Pwr</span><span>DC</span><span>GPU</span><span>Orch</span><span>Train</span><span>FT</span><span>Lat</span><span>API</span><span>SLS</span><span>Dev</span></div>
+</div>
+</div>
+
+<!-- MATRIX -->
+<h2>Stack coverage — named companies</h2>
+<p style="margin-bottom:.75rem;">The matrix below shows which capabilities each company operates as a core or partial product. X-axis runs from low abstraction (physical infrastructure) to high abstraction (developer tooling).</p>
+<button id="matrix-toggle" onclick="toggleMatrix()" style="
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--paper2);border:0.5px solid var(--rule);border-radius:6px;
+  padding:7px 14px;font-size:12px;font-family:'DM Sans',sans-serif;
+  color:var(--ink2);cursor:pointer;margin-bottom:1.25rem;
+  transition:background .15s,border-color .15s;
+" onmouseover="this.style.background='var(--paper3)'" onmouseout="this.style.background='var(--paper2)'">
+  <span id="matrix-toggle-icon" style="font-size:11px;">▼</span>
+  <span id="matrix-toggle-label">Show company matrix</span>
+</button>
+<div id="matrix-container" style="display:none;">
+<div style="margin:1.75rem 0;">
+<div class="mat-header">
+<div class="col-head">Energy / power</div><div class="col-head">Data center</div><div class="col-head">Bare-metal GPU</div><div class="col-head">Cluster orchestration</div><div class="col-head">Model training</div><div class="col-head">Model fine-tuning</div><div class="col-head">Latency inference</div><div class="col-head">Inference API</div><div class="col-head">Serverless GPU</div><div class="col-head">Developer tooling</div>
+</div>
+<div class="axis-row"><span class="axis-lo">← low abstraction</span><div class="axis-track"></div><span class="axis-hi">high abstraction →</span></div>
+<div class="group-label">Global — AI cloud platforms</div>
+<div class="data-row"><div class="row-name">CoreWeave</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Nebius</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Lambda Labs</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Crusoe</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Voltage Park</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">Global — power / physical</div>
+<div class="data-row"><div class="row-name">Core Scientific</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">IREN</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">Global — latency specialists</div>
+<div class="data-row"><div class="row-name">Groq</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Cerebras</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">SambaNova</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">Global — serverless / abstracted</div>
+<div class="data-row"><div class="row-name">Together AI</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Modal Labs</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div></div></div>
+<div class="data-row"><div class="row-name">Fireworks AI</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Baseten</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row"><div class="row-name">Replicate (Cloudflare)</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div></div></div>
+<div class="data-row"><div class="row-name">RunPod / Vast.ai</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-part"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">MENA — sovereign</div>
+<div class="data-row g-mena"><div class="row-name">G42 / Core42 🇦🇪</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row g-mena"><div class="row-name">HUMAIN 🇸🇦</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">Africa — infrastructure</div>
+<div class="data-row g-af"><div class="row-name">Cassava Technologies 🌍</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-part"></div><div class="seg seg-part"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row g-af"><div class="row-name">Kasi Cloud 🌍</div><div class="bar-track"><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row g-af"><div class="row-name">Udutech 🌍</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-part"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div></div></div>
+<div class="group-label">Africa — software / inference</div>
+<div class="data-row g-asw"><div class="row-name">Cerebrium 🌍</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-full"></div><div class="seg seg-none"></div></div></div>
+<div class="data-row g-asw"><div class="row-name">Salus Cloud 🌍</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div></div></div>
+<div class="data-row g-asw"><div class="row-name">Deimos 🌍</div><div class="bar-track"><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-none"></div><div class="seg seg-full"></div></div></div>
+</div>
+
+<div class="mat-legend">
+<span class="ml-item"><span class="ml-sw" style="background:#1a4fa0;"></span>Core capability</span>
+<span class="ml-item"><span class="ml-sw" style="background:rgba(26,79,160,0.18);border:1px solid #1a4fa0;"></span>Partial / emerging</span>
+<span class="ml-item"><span class="ml-sw" style="background:#e5e2db;"></span>Not present</span>
+<span class="ml-sep"></span>
+<span class="ml-item" style="color:#6b3fa0;">▬ MENA sovereign</span>
+<span class="ml-item" style="color:#0d7a5f;">▬ Africa infrastructure</span>
+<span class="ml-item" style="color:#b83030;">▬ Africa software</span>
+
+</div><!-- /matrix-container -->
+</div>
+
+<!-- CONSOLIDATION -->
+<h2>It is a cycle, not a bubble</h2>
+<p>The neocloud sector grew out of a supply shock. After late 2022, demand for GPU capacity expanded faster than hyperscalers or chipmakers could respond, and the resulting scarcity produced pricing that would be difficult to sustain in a competitive market. That gap attracted capital at scale — more than $35 billion in private neocloud funding in 2025 alone, tripling the prior year’s record<sup>36</sup> — and the capital is now funding both additional infrastructure and the hardware innovation that will expand effective supply further. The pattern is a standard commodity response: high prices attract investment, investment increases supply, supply normalises prices.</p>
+<p>This does not mean the sector collapses. It means it follows the same boom-bust cycle seen in commodities like oil, memory chips, and fibre-optic cable before it. Demand for AI compute is growing and will continue to grow. What is less certain is that demand growth matches supply growth 1-to-1.
+
+</p><p>The chart below illustrates the point that both the statement "demand will grow exponentially" and "supply will grow exponentially" can be true while the commodity cycle stays intact.</p><div style="margin:1.75rem 0;">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+  <div>
+    <p style="font-size:12px;font-weight:500;color:var(--ink);margin:0 0 2px;">Supply and demand</p>
+    <div style="display:flex;gap:14px;margin:0 0 8px;">
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:18px;height:2.5px;border-radius:1px;background:#1a4fa0;flex-shrink:0;"></span>Supply</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:18px;border-top:2px dashed #b85c10;flex-shrink:0;"></span>Demand</span>
+    </div>
+    <div style="position:relative;height:220px;"><canvas id="cCycleM" role="img" aria-label="Supply and demand both growing exponentially with an oscillating gap switching between surplus and shortage" width="696" height="440" style="display: block; box-sizing: border-box; height: 220px; width: 348px;"></canvas></div>
+  </div>
+  <div>
+    <p style="font-size:12px;font-weight:500;color:var(--ink);margin:0 0 2px;">The spread (supply − demand)</p><div style="display:flex;gap:14px;margin:0 0 8px;"><span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">Surplus (glut)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:18px;height:2.5px;border-radius:1px;background:#a32d2d;flex-shrink:0;"></span>Shortage (scarcity)</span>
+    </div>
+    <div style="position:relative;height:220px;"><canvas id="cCycleS" role="img" aria-label="The spread between supply and demand forming a sine wave oscillating symmetrically above and below zero" width="696" height="440" style="display: block; box-sizing: border-box; height: 220px; width: 348px;"></canvas></div>
+  </div>
+</div>
+<p style="font-size:10px;color:var(--ink4);margin:8px 0 0;">Illustrative model.</p>
+</div>
+<script>
+(function(){
+var isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+var tc=isDark?'#8a8784':'#73726c',gc=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)';
+var N=72,baseRate=0.035,amplitude=0.022,cycleLen=24;
+var labels=Array.from({length:N},function(_,i){return i%12===0?'Yr '+(i/12):'';});
+var supply=[100],demand=[100];
+for(var i=1;i<N;i++){var t=(2*Math.PI*i)/cycleLen;supply.push(+(supply[i-1]*(1+baseRate+amplitude*Math.cos(t))).toFixed(3));demand.push(+(demand[i-1]*(1+baseRate-amplitude*Math.cos(t))).toFixed(3));}
+var spread=supply.map(function(s,i){return +(s-demand[i]).toFixed(2);});
+new Chart(document.getElementById('cCycleM'),{type:'line',data:{labels:labels,datasets:[{label:'Supply',data:supply,borderColor:'#1a4fa0',borderWidth:2,pointRadius:0,fill:false,tension:0.4},{label:'Demand',data:demand,borderColor:'#b85c10',borderWidth:2,pointRadius:0,fill:false,tension:0.4,borderDash:[6,3]}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:0},grid:{display:false}},y:{ticks:{color:tc,font:{size:10},callback:function(v){return Math.round(v);}},grid:{color:gc}}}}});
+new Chart(document.getElementById('cCycleS'),{type:'line',data:{labels:labels,datasets:[{label:'Spread',data:spread,borderColor:isDark?'#7ab648':'#3b6d11',borderWidth:2,pointRadius:0,tension:0.4,fill:{target:{value:0},above:isDark?'rgba(99,153,34,0.28)':'rgba(59,109,17,0.18)',below:isDark?'rgba(163,45,45,0.28)':'rgba(163,45,45,0.18)'}}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:0},grid:{display:false}},y:{ticks:{color:tc,font:{size:10},callback:function(v){return(v>0?'+':'')+v.toFixed(0);}},grid:{color:gc},afterDataLimits:function(scale){var r=scale.max-scale.min;scale.max+=r*0.12;scale.min-=r*0.12;}}}}});
+})();
+</script>
+
+<p style="color:var(--ink2);margin-bottom:.85rem;">Several mechanisms are expanding effective GPU capacity without requiring new chip production. NVIDIA’s Multi-Instance GPU technology allows a single physical chip to run up to seven isolated workloads in parallel — Red Hat benchmarks show a 2.3× throughput increase on the same hardware when properly configured for inference.<sup>A</sup> Cerebras’s wafer-scale CS-3 delivers 2.5 to 3 times the inference throughput of NVIDIA’s current-generation Blackwell DGX B200 on comparable large models,<sup>B</sup> and Groq’s Language Processing Unit runs 10 to 30 times the token output of an H100 at low batch sizes.<sup>C</sup> These are incremental gains applied to an existing installed base, which means effective AI compute supply is expanding significantly faster than the number of new GPUs shipped. The capital that flooded into GPU infrastructure in 2023 and 2024 is also still working its way through supply chains; infrastructure commitments made during the scarcity phase continue to come online regardless of whether demand keeps pace.</p>
+<p>When effective supply catches demand, the wholesale GPU rental business comes under significant pressure. The business model depends on a spread between what a neocloud pays for compute capacity and what it charges customers. In an oversupplied market, both sides of that spread compress: wholesale costs fall, attracting more entrants at lower margins, which drives retail prices toward marginal cost. A bare-metal GPU rental business earning 14 to 16% gross margin after depreciation in normal conditions<sup>11</sup> has very limited capacity to absorb that compression.&nbsp;</p>
+<p>The result is a convergence to a smaller number of vertically integrated companies (as we saw in the Web 1.0 and Web 2.0 consolidation phases for example). These are companies with the balance sheets to absorb companies struggling in a compute oversupply. We identify two archetypes whose valuations are more likely to survive a consolidation phase, because neither is primarily selling compute.</p>
+
+<!-- SOVEREIGN -->
+<h2 class="hl hl-sovereign">I. Sovereign clouds</h2>
+<div class="focus-badge bs">Focus archetype I</div>
+
+<p>In regulated sectors and government contexts across MENA and Africa, the question of where AI workloads run is determined by law rather than preference. Data localisation requirements, national security classification rules, and sector-specific compliance obligations all constrain which infrastructure an organisation can use, independent of price. A UAE government agency cannot route its workloads through a US-based data center because doing so is unlawful, not because CoreWeave’s offering is inadequate. The commercial comparison does not apply before the procurement conversation begins.</p>
+<p>This regulatory environment has become more consequential as AI infrastructure has shifted from an IT procurement question to a policy one. Governments that previously had limited reason to care about where their data was processed now have direct political interest in whether AI models trained on national data operate inside national infrastructure. In the UAE and Saudi Arabia that interest has already translated into capital commitments at a scale that makes those countries among the largest non-US AI infrastructure investors in the world. Nigeria and Egypt are at an earlier stage — the policy conversation is ahead of the physical infrastructure — but the direction is consistent across the region. For commercial neoclouds, the consequence is a category of demand that is not addressable through better hardware, lower pricing, or more efficient operations.</p>
+<p>The economics of sovereign clouds also differ from commercial neoclouds in ways that reduce exposure to commodity dynamics. Government-backed and sovereign wealth fund capital can absorb the long payback periods associated with greenfield infrastructure that commercial investors would not accept on a standard return timeline. Pricing is set against compliance requirements rather than against AWS spot rates. The risks specific to this archetype are also different in character: whether sovereign mandates generate sufficient commercial volume beyond government anchor customers to sustain operations at scale, and whether dependence on US chip exports undermines the practical meaning of the sovereignty being claimed. Both are political risks, not market ones, and both evolve on political rather than commercial timelines.</p>
+
+<h3>MENA</h3>
+<p>
+<button class="co-pill sovereign" onclick="openDrawer('g42')">G42 / Core42 🇦🇪 <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill sovereign" onclick="openDrawer('humain')">HUMAIN 🇸🇦 <span class="co-pill-arrow">↗</span></button>
+</p>
+
+<h3>Africa</h3>
+<p>Africa is at an earlier point in the same trajectory. Nigeria had 17 operational data centers before 2026, none above 20 MW of capacity,<sup>30</sup> and the infrastructure needed to host compliant AI workloads for financial services, healthcare, or government use cases is only now being built. The sovereign cloud thesis in Africa is partly an infrastructure build thesis: the regulatory environment exists or is developing, but the physical preconditions are only recently being established.</p>
+<p>
+<button class="co-pill sovereign" onclick="openDrawer('cassava')">Cassava Technologies <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill sovereign" onclick="openDrawer('kasi')">Kasi Cloud <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill sovereign" onclick="openDrawer('udutech')">Udutech <span class="co-pill-arrow">↗</span></button>
+</p>
+
+<!-- SOFTWARE DEPTH -->
+<h2 class="hl hl-serverless">II. Software-depth platforms</h2>
+<div class="focus-badge bp">Focus archetype II</div>
+
+<p>The second archetype that survives a compute glut does so for a different reason: it is not selling compute in the first place. Software-depth platforms — which include serverless GPU infrastructure, fine-tuning services, latency-optimised inference, and developer tooling — sell abstraction. Customers pay for the platform’s software layer: the cold start performance, the serving optimisation, the fine-tuning pipelines, the observability tooling. The underlying GPU cost is an input, not the product. When that input deflates, the cost base improves while the switching costs that retain customers remain unchanged.</p>
+<p>This matters because the switching cost in these businesses is accumulated tooling investment rather than hardware lock-in. A team that has built fine-tuning workflows, deployment automation, and monitoring on a given platform has invested engineering time that does not transfer to a competitor. That investment compounds with use: the longer a team operates on a platform, the more tooling it builds on top of it, and the higher the cost of migration. A cheaper GPU alternative, even a substantially cheaper one, does not automatically justify the disruption of rebuilding that infrastructure elsewhere. The same logic applies to serving optimisation: cold start performance, quantisation pipelines, and inference batching configurations tuned against real production traffic represent accumulated engineering depth that a new entrant with cheaper hardware cannot replicate immediately.</p>
+<p>What this means during a compute glut is that these platforms are positioned to benefit from the same conditions that destroy the wholesale model. As GPU costs fall, the underlying input cost for these businesses falls too. Their customers do not leave because cheaper GPUs are available elsewhere — they stay because of the tooling and serving infrastructure built on top of those GPUs. The margin previously captured by the spread between wholesale and retail GPU pricing migrates toward the software layer. A developer team is not going to rebuild its production fine-tuning infrastructure because GPU rental rates dropped 40%, in the same way that a company does not move off Salesforce because a cheaper CRM exists.</p><p>Inference growth is also a tailwind for this archetype specifically. ABI Research projects inference will account for 80% of neocloud GPU demand by 2030.<sup style="color: rgb(184, 181, 176);">26</sup>&nbsp;Inference workloads — particularly real-time voice, video, and agentic applications — are where serving optimisation creates the most visible performance differential. A well-tuned serving stack consistently delivers two to four times the throughput of a naive deployment on the same hardware, with cold start latency now below two seconds on leading platforms versus 30 to 60 seconds in 2024.<sup style="color: rgb(184, 181, 176);">21</sup>&nbsp;As inference becomes the dominant workload, the value of that optimisation becomes more visible to more customers.</p>
+
+<div class="chart-block">
+<div class="chart-title">Training vs inference: projected workload mix</div>
+<div class="chart-sub">Share of neocloud GPU demand by workload type</div>
+<div style="position:relative;height:190px;"><canvas id="workloadChart" width="1440" height="380" style="display: block; box-sizing: border-box; height: 190px; width: 720px;"></canvas></div>
+<div class="legend">
+<span class="leg"><span class="leg-sw" style="background:#1a4fa0;"></span>2025 (current)</span>
+<span class="leg"><span class="leg-sw" style="background:rgba(26,79,160,0.22);border:1px solid #1a4fa0;"></span>2030E</span>
+</div>
+<div class="chart-source">Source: ABI Research (2026). Training share declines as foundation model development concentrates among fewer, larger labs while inference scales across enterprise deployments.</div></div>
+
+<p>
+<button class="co-pill serverless" onclick="openDrawer('modal')">Modal Labs <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill serverless" onclick="openDrawer('replicate')">Replicate (Cloudflare) <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill serverless" onclick="openDrawer('fireworks')">Fireworks AI <span class="co-pill-arrow">↗</span></button>
+&nbsp;
+<button class="co-pill serverless" onclick="openDrawer('cerebrium-sls')">Cerebrium <span class="co-pill-arrow">↗</span></button>
+</p>
+
+<div class="econ">
+<div class="econ-label">Economics</div>
+<p>Software-depth platforms price on the value of the software layer, not on GPU rental rates. As underlying compute costs decline, margin on the software layer expands rather than compresses, because the switching cost that retains customers is independent of the GPU cost that constitutes the cost base. The business model resembles SaaS more than infrastructure rental: revenue is driven by platform adoption and depth of integration, and the cost base benefits from hardware commoditisation rather than being threatened by it because they don't own the underlying hardware. The risks are those typical of developer platforms — customer acquisition cost, competition from well-funded incumbents moving up the stack, and the possibility that the tooling ecosystem does not reach the depth required to generate durable switching costs before the market consolidates.</p>
+</div>
+
+<!-- CONCLUSION -->
+<h2>Conclusion</h2>
+<p>The neocloud market grew out of a specific set of conditions: GPU scarcity, insufficient hyperscaler capacity, and a surge in AI compute demand that outpaced existing infrastructure. Those conditions produced attractive economics for GPU rental businesses. They will not last indefinitely. The mechanisms that expand effective compute supply like hardware efficiency improvements, more efficient use of existing hardware, and the capital already committed to new data center capacity, increase the likelihood of a medium term oversupply. The pattern is typical in a commodity cycle, where demand and supply rarely move in tandem.</p>
+<p>What that implies for the sector is not that neoclouds disappear, but that the businesses within it converge toward the positions with durable economics. Sovereign clouds are insulated from commodity dynamics because their customers’ choices are governed by law rather than cost comparison. Software-depth platforms are insulated because they are selling a software layer over commodity hardware, and the switching costs generated by deep tooling integration do not diminish as GPU prices fall. Both archetypes benefit from the same conditions that will compress the wholesale GPU rental model.</p><hr class="div">
+<div class="refs">
+<div class="slabel">Sources</div>
+<p>1. Data Center Frontier / MLQ.ai: H100 DGX $34/hr (neoclouds) vs $98/hr (hyperscaler avg), Nov 2025.</p>
+<p>2. Synergy Research Group, "Neoclouds Currently Growing by Over 200% per Year," Oct 2025.</p>
+<p>3. Synergy Research Group: $180B neocloud revenue by 2030.</p>
+<p>4. ABI Research, "Neoclouds to Generate Over $65B in GPUaaS Revenues by 2030," July 2025.</p>
+<p>5. Gartner: neoclouds to capture ~20% of $267B AI cloud market by 2030. Computer Weekly, Feb 2026.</p>
+<p>6. Market.us: neocloud market $16.21B (2024) to $1.1T (2034), implying ~$130B in 2030. Nov 2025.</p>
+<p>7. HashrateIndex, "What is a Neocloud," Feb 2026.</p>
+<p>11. McKinsey, "The evolution of neoclouds," Nov 2025; CoreWeave S-1, March 2025.</p>
+<p>12. CoreWeave 10-Q Q3 2025: revenue $1.4B (+134% YoY); backlog $66.8B.</p>
+<p>13. Nebius Q3 2025: $146M revenue (+355% YoY).</p>
+<p>16. EE Times / Fortune: NVIDIA $20B Groq IP acquisition, Dec 2025.</p>
+<p>17. Cerebras / Introl: WSE-3, 900,000 cores, 21 PB/s. Llama 4 Maverick at 2,500 tok/s/user. March 2026.</p>
+<p>18. TradingView: Cerebras $5.6B IPO filing May 2026. OpenAI 750 MW commitment.</p>
+<p>19. DCD / CIO Dive: SambaNova $350M Series E, SN50, Feb 2026.</p>
+<p>21. Introl / Spheron: cold starts 2–4s by 2025; utilisation break-even 40–50%.</p>
+<p>22. Replicate / Cloudflare acquisition, November 2025.</p>
+<p>23. Microsoft / G42 / DCD: $1.5B investment April 2024; $15.2B UAE commitment; Khazna 1GW Oct 2025.</p>
+<p>24. HUMAIN / NVIDIA: 600,000 GPU commitment Nov 2025; GB300 Dec 2025; ALLAM; US expansion.</p>
+<p>25. AWS / HUMAIN: $5B+ AI Zone, 150,000 AI accelerators, Nov 2025.</p>
+<p>26. ABI Research, "State of Neocloud: Four Trends for 2026," Dec 2025.</p>
+<p>27. MarketsandMarkets: AI inference $106B (2025) to $255B (2030) at 19% CAGR.</p>
+<p>28. Fortune / Jensen Huang, BG2 podcast, Dec 2025.</p>
+<p>29. Middle East AI News: Saudi GB300 export approval, May 2026.</p>
+<p>30. Tech Cabal: Nigeria 17 data centers, none above 20 MW before 2026. Feb 2026.</p>
+<p>31. NVIDIA / Cassava: $720M programme, first NVIDIA Cloud Partner Africa, Nov 2025.</p>
+<p>32. Kasi Cloud / GlobeNewswire: LOS1 commissioned May 19 2026, $250M, 100MW target.</p>
+<p>35. TechCabal: Cerebrium $8.5M seed, Gradient Ventures, YC, Authentic Ventures, July 2025.</p>
+</div>
+
+<script>
+/* ── Company data ── */
+const companies = {
+  'cerebrium-latency':{
+    tag:'Software-native latency \xB7 Cape Town, 2021 \uD83C\uDF0D',
+    name:'Cerebrium',
+    body:'Founded by Michael Louis and Jonathan Irwin, former CTO and lead engineer at OneCart (acquired by Walmart), Cerebrium runs serverless GPU infrastructure optimised for real-time multimodal applications. Cold starts sit below two seconds across 12+ GPU types. The platform is HIPAA, SOC\u00A02, and GDPR compliant. Production customers include Tavus, Deepgram, Vapi, and Twilio \u2014 all building voice AI or video AI products at scale. In mid-2025, Cerebrium raised $8.5\u00A0million in seed funding led by Gradient Ventures, with Y Combinator and Authentic Ventures participating.',
+    meta:'Funding: $8.5M (Gradient Ventures, YC, Authentic Ventures) \xB7 Cold starts: <2s \xB7 GPU types: 12+ \xB7 Customers: Tavus, Deepgram, Vapi, Twilio'
+  },
+  'g42':{
+    tag:'Sovereign cloud \xB7 Abu Dhabi \uD83C\uDDE6\uD83C\uDDEA',
+    name:'G42 / Core42',
+    body:'G42 was founded in 2018 under Abu Dhabi sovereign capital and now spans cloud infrastructure (Core42), data centers (Khazna), and AI model development (Inception). In April 2024, Microsoft invested $1.5\u00A0billion in G42, alongside a $15.2\u00A0billion commitment to UAE digital infrastructure. Core42 launched the UAE\u2019s first self-service neocloud platform at GITEX 2025, offering pay-as-you-go NVIDIA GPU access with sovereign-compliance framing for regulated industries. Khazna operates 30 data centers and has a 1\u00A0gigawatt expansion plan announced in October 2025.',
+    meta:'Investors: Microsoft ($1.5B), Abu Dhabi sovereign capital \xB7 Khazna target: 1GW \xB7 Partners: Microsoft, OpenAI, Cerebras'
+  },
+  'humain':{
+    tag:'Sovereign cloud \xB7 Riyadh \uD83C\uDDF8\uD83C\uDDE6',
+    name:'HUMAIN',
+    body:'Launched by Saudi Arabia\u2019s Public Investment Fund in May 2025, HUMAIN plans to deploy up to 600,000 NVIDIA GPUs over three years under a partnership valued at $18 to $24\u00A0billion. The first Blackwell GB300 shipment arrived in December 2025. Saudi Arabia received US export approval for 35,000 Blackwell chips following the US-Saudi summit in May 2026. In November 2025, AWS announced a parallel $5\u00A0billion partnership to deploy 150,000 AI accelerators in a Riyadh AI Zone. HUMAIN is also developing ALLAM, an Arabic-first foundation model, and is building US data center capacity through a partnership with Global AI.',
+    meta:'Backer: PIF \xB7 NVIDIA deal: 600,000 GPUs, $18\u201324B \xB7 AWS partnership: $5B+ \xB7 LLM: ALLAM'
+  },
+  'cassava':{
+    tag:'Pan-African infrastructure \uD83C\uDF0D',
+    name:'Cassava Technologies',
+    body:'Founded by Strive Masiyiwa, Cassava is building the continent\u2019s first GPU-as-a-service platform under a $720\u00A0million programme backed by NVIDIA \u2014 NVIDIA\u2019s first direct infrastructure investment in Africa. Deployment began with 3,000 GPUs in South Africa in early 2025 and will expand to Egypt, Nigeria, Kenya, and Morocco over three to four years, reaching 12,000+ GPUs. Cassava is the first NVIDIA Cloud Partner on the continent and holds partnerships with Google and Anthropic. Its primary customer target is enterprises and government agencies requiring in-country compute for compliance purposes.',
+    meta:'Capital: up to $720M \xB7 Markets: South Africa, Egypt, Nigeria, Kenya, Morocco \xB7 GPU target: 12,000+'
+  },
+  'kasi':{
+    tag:'Physical infrastructure \xB7 Lagos \uD83C\uDF0D',
+    name:'Kasi Cloud',
+    body:'Kasi Cloud commissioned West Africa\u2019s first hyperscale-ready AI data center in Lagos in May 2026. The $250\u00A0million campus in Lekki is designed to scale to 100\u00A0MW, sits adjacent to six subsea cable landing stations including Equiano and 2Africa, and delivers sub-50ms latency for in-country workloads. The first building, LOS1, was built for high-density AI workloads from the ground up, with liquid cooling to the chipset. Kasi is backed by NSIA, Nigeria\u2019s sovereign investment authority.',
+    meta:'Capital: $250M \xB7 Capacity: 100MW target \xB7 Latency: <50ms in-country \xB7 Backer: NSIA'
+  },
+  'udutech':{
+    tag:'Access layer \xB7 Lagos \uD83C\uDF0D',
+    name:'Udutech',
+    body:'Founded in February 2025 by Alexander Tsado, a former NVIDIA product manager, Udutech runs the Africa GPU Hub in Lagos, offering GPU rental at under $1 per hour. The model targets startups, universities, and research institutions that cannot access hyperscaler pricing or pay in dollars. Udutech also manufactures modular GPU units at under $150,000 each, designed to run below one megawatt and deployable by banks, telecoms, or NGOs without hyperscale data center infrastructure.',
+    meta:'Founded: Feb 2025 \xB7 Founder: Alexander Tsado (ex-NVIDIA) \xB7 Pricing: <$1/hr \xB7 Modular units: <$150K, <1MW'
+  },
+  'modal':{
+    tag:'Serverless GPU \xB7 New York',
+    name:'Modal Labs',
+    body:'Modal\u2019s interface is Python-native: developers annotate functions with hardware requirements and Modal handles provisioning, scaling, and billing. The platform covers inference, fine-tuning on single and multi-node clusters, batch processing, and data pipelines. It also targets real-time applications, with published documentation for sub-1\u00A0second voice-to-voice latency using Modal\u2019s infrastructure. Modal raised $87\u00A0million in September 2025 at a $1.1\u00A0billion valuation.',
+    meta:'Funding: $87M Series B \xB7 Valuation: $1.1B \xB7 Interface: Python-native \xB7 Products: inference, fine-tuning, batch, pipelines'
+  },
+  'replicate':{
+    tag:'Serverless model platform \xB7 Acquired by Cloudflare, Nov 2025',
+    name:'Replicate',
+    body:'Replicate built the largest community-contributed model catalog in the serverless GPU market, with more than 50,000 Cog-packaged models spanning LLMs, image generation, video, audio, and research variants. Cloudflare acquired the company in November 2025. Replicate\u2019s models are now running on Cloudflare\u2019s edge network, which puts inference compute closer to end users globally without requiring regional data center investment. That distribution advantage is not replicable by a standalone GPU platform.',
+    meta:'Acquired: Cloudflare, Nov 2025 \xB7 Model catalog: 50,000+ models \xB7 Distribution: Cloudflare global edge'
+  },
+  'fireworks':{
+    tag:'Serverless inference \xB7 San Francisco',
+    name:'Fireworks AI',
+    body:'Fireworks reached $315\u00A0million ARR in February 2026 with more than 10,000 enterprise customers including Notion, Uber, and Shopify, at approximately 50% gross margins. The product covers fine-tuning, serverless inference, and dedicated GPU endpoints. Differentiation is on serving optimisation: Fireworks applies quantisation, batching, and caching to lower per-token costs relative to standard deployments. The company raised $250\u00A0million at a $4\u00A0billion valuation in October 2025. Its gross margin is below the 70%+ typical of subscription software, reflecting GPU infrastructure costs embedded in cost of goods.',
+    meta:'Funding: $250M Series C \xB7 Valuation: $4B \xB7 ARR: $315M (Feb 2026) \xB7 Gross margin: ~50%'
+  },
+  'cerebrium-sls':{
+    tag:'Serverless inference \xB7 Cape Town, 2021 \uD83C\uDF0D',
+    name:'Cerebrium',
+    body:'Cerebrium sits at the intersection of the serverless and latency archetypes: its infrastructure is serverless in billing and interface, but the engineering investment is concentrated on real-time performance. Cold starts below two seconds, 12+ GPU types, HIPAA/SOC\u00A02/GDPR compliance. Production deployments at Tavus, Deepgram, Vapi, and Twilio. Raised $8.5\u00A0million in mid-2025 from Gradient Ventures, Y Combinator, and Authentic Ventures.',
+    meta:'Funding: $8.5M \xB7 Cold starts: <2s \xB7 Compliance: HIPAA, SOC 2, GDPR \xB7 Customers: Tavus, Deepgram, Vapi, Twilio'
+  }
+};
+
+function openDrawer(id) {
+  const c = companies[id];
+  if (!c) return;
+  document.getElementById('drawer-tag').textContent = c.tag;
+  document.getElementById('drawer-name').textContent = c.name;
+  document.getElementById('drawer-body').textContent = c.body;
+  document.getElementById('drawer-meta').textContent = c.meta;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer').focus();
+}
+function closeDrawer() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ── Charts ── */
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+const blue = '#1a4fa0', blueL = 'rgba(26,79,160,0.22)', tc = '#8a8784', gc = 'rgba(0,0,0,0.05)';
+new Chart(document.getElementById('revChart'), {
+  type:'bar',
+  data:{labels:['2022','2023','2024','2025E','2026E','2027E','2028E','2029E','2030E'],datasets:[{data:[0.5,1.5,16,23,45,60,80,95,110],backgroundColor:['#1a4fa0','#1a4fa0','#1a4fa0','#1a4fa0',blueL,blueL,blueL,blueL,blueL],borderRadius:3,borderSkipped:false}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'B'}}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11},callback:v=>'$'+v+'B'},grid:{color:gc},max:120}}}
+});
+new Chart(document.getElementById('workloadChart'), {
+  type:'bar',
+  data:{labels:['Training','Inference','Other'],datasets:[{label:'2025',data:[60,30,10],backgroundColor:blue,borderRadius:3,borderSkipped:false},{label:'2030E',data:[15,80,5],backgroundColor:blueL,borderColor:blue,borderWidth:1,borderRadius:3,borderSkipped:false}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},scales:{x:{ticks:{color:tc,font:{size:12}},grid:{display:false}},y:{max:100,ticks:{color:tc,font:{size:11},callback:v=>v+'%'},grid:{color:gc}}}}
+});
+</script>
+<script>
+function toggleMatrix() {
+  var container = document.getElementById('matrix-container');
+  var icon = document.getElementById('matrix-toggle-icon');
+  var label = document.getElementById('matrix-toggle-label');
+  var isHidden = container.style.display === 'none';
+  container.style.display = isHidden ? 'block' : 'none';
+  icon.innerHTML = isHidden ? '&#x25B2;' : '&#x25BC;';
+  label.textContent = isHidden ? 'Hide company matrix' : 'Show company matrix';
+}
+</script>
+
+</body></html>
