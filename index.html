@@ -300,8 +300,27 @@ function loadCommentsFromRemote() {
         comments = data;
         renderComments();
         updateCommentBadge();
+        reapplyHighlights();
       }
     }).catch(function() {});
+}
+
+function reapplyHighlights() {
+  if (!articleDoc) return;
+  // Remove all existing marks first to avoid duplicates
+  var existing = articleDoc.querySelectorAll('.comment-mark');
+  for (var i = 0; i < existing.length; i++) {
+    var el = existing[i], p = el.parentNode;
+    if (p) { while (el.firstChild) p.insertBefore(el.firstChild, el); p.removeChild(el); }
+  }
+  // Re-apply for every unresolved comment that has selected_text
+  var seen = {};
+  comments.forEach(function(c) {
+    if (!c.resolved && c.selected_text && !seen[c.selected_text]) {
+      seen[c.selected_text] = true;
+      highlightComment(c.selected_text, c.id);
+    }
+  });
 }
 
 function addComment() {
@@ -321,7 +340,10 @@ function addComment() {
       document.getElementById('comment-text').value = '';
       document.getElementById('add-comment-btn').disabled = false;
       loadCommentsFromRemote();
-      if (savedText) highlightComment(savedText);
+      if (savedText) {
+        var newId = data && data[0] ? data[0].id : null;
+        highlightComment(savedText, newId);
+      }
       clearSelection();
     }).catch(function() {
       document.getElementById('add-comment-btn').disabled = false;
@@ -377,20 +399,33 @@ function updateCommentBadge() {
   else { badge.style.display = 'none'; }
 }
 
-function highlightComment(text) {
+function highlightComment(text, commentId) {
   if (!articleDoc || !text) return;
   var walker = articleDoc.createTreeWalker(articleDoc.body, NodeFilter.SHOW_TEXT, null);
   var node;
   while ((node = walker.nextNode())) {
     var idx = node.textContent.indexOf(text);
     if (idx !== -1) {
-      var range = articleDoc.createRange();
-      range.setStart(node, idx);
-      range.setEnd(node, idx + text.length);
-      var span = articleDoc.createElement('span');
-      span.className = 'comment-mark';
-      span.title = 'Comment';
-      range.surroundContents(span);
+      try {
+        var range = articleDoc.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + text.length);
+        var span = articleDoc.createElement('span');
+        span.className = 'comment-mark';
+        span.title = 'Comment: click to view';
+        if (commentId) span.setAttribute('data-comment-id', commentId);
+        span.onclick = function() {
+          switchTab('comments');
+          var id = this.getAttribute('data-comment-id');
+          if (id) {
+            var cards = document.querySelectorAll('.comment-card');
+            // scroll comments list to the matching card
+            var list = document.getElementById('comments-list');
+            list.scrollTop = 0;
+          }
+        };
+        range.surroundContents(span);
+      } catch(e) { /* skip if range crosses node boundaries */ }
       break;
     }
   }
