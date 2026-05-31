@@ -221,30 +221,38 @@ function setSyncDot(state) {
 
 // ── Document state ────────────────────────────────────────────
 
+// Track whether we are currently pushing to suppress poll-triggered reloads
+var isPushing = false;
+
 function pushDocument(html) {
   setSyncDot('syncing');
-  var ts = new Date().toISOString();
-  // Upsert
+  isPushing = true;
+  // Let DB set updated_at via default; we read it back after
   return fetch(SUPABASE_URL + "/rest/v1/document_state?id=eq." + DOC_ID, {
     method: "PATCH",
-    headers: sbHeaders(),
-    body: JSON.stringify({ html: html, updated_at: ts })
-  }).then(function(r) {
-    if (r.status === 404 || r.status === 200 || r.status === 204) {
-      // Try insert if patch found nothing
-      if (r.status === 204) {
-        return fetch(SUPABASE_URL + "/rest/v1/document_state", {
-          method: "POST",
-          headers: sbHeaders(),
-          body: JSON.stringify({ id: DOC_ID, html: html, updated_at: ts })
-        });
-      }
+    headers: Object.assign({}, sbHeaders(), {"Prefer": "return=representation"}),
+    body: JSON.stringify({ html: html })
+  }).then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (Array.isArray(data) && data.length > 0) {
+      // Patch succeeded — record the server timestamp
+      localVersion = data[0].updated_at;
+      setSyncDot('ok');
+    } else {
+      // Row didn't exist yet — insert
+      return fetch(SUPABASE_URL + "/rest/v1/document_state", {
+        method: "POST",
+        headers: Object.assign({}, sbHeaders(), {"Prefer": "return=representation"}),
+        body: JSON.stringify({ id: DOC_ID, html: html })
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (Array.isArray(d) && d.length > 0) localVersion = d[0].updated_at;
+        setSyncDot('ok');
+      });
     }
-    return r;
-  }).then(function() {
-    localVersion = ts;
-    setSyncDot('ok');
-  }).catch(function() { setSyncDot('error'); });
+  })
+  .catch(function() { setSyncDot('error'); })
+  .finally(function() { isPushing = false; });
 }
 
 function loadFromRemote() {
@@ -254,13 +262,10 @@ function loadFromRemote() {
       hideLoading();
       if (data && data.length > 0) {
         var row = data[0];
-        if (row.updated_at !== localVersion) {
-          localVersion = row.updated_at;
-          loadArticleHTML(row.html, false);
-          appendSystem('Loaded latest version from server.');
-        }
+        localVersion = row.updated_at;
+        loadArticleHTML(row.html, false);
+        appendSystem('Loaded latest version from server.');
       } else {
-        hideLoading();
         appendSystem('No saved version found on server.');
       }
     }).catch(function(e) {
@@ -270,20 +275,44 @@ function loadFromRemote() {
 }
 
 function pollForUpdates() {
-  if (!articleDoc) return;
+  if (!articleDoc || isPushing) return;
   sbFetch("/rest/v1/document_state?id=eq." + DOC_ID + "&select=updated_at")
     .then(function(data) {
       if (data && data.length > 0) {
         var remoteTs = data[0].updated_at;
         if (localVersion && remoteTs !== localVersion) {
-          // Someone else updated — reload
-          loadFromRemote().then(function() {
+          // A collaborator made a change — reload without resetting scroll
+          loadFromRemoteNoScroll().then(function() {
             appendSystem('Document updated by a collaborator.');
           });
         }
       }
     }).catch(function() {});
   loadCommentsFromRemote();
+}
+
+function loadFromRemoteNoScroll() {
+  // Like loadFromRemote but preserves scroll position and doesn't show loading overlay
+  return sbFetch("/rest/v1/document_state?id=eq." + DOC_ID + "&select=*")
+    .then(function(data) {
+      if (data && data.length > 0) {
+        var row = data[0];
+        if (row.updated_at === localVersion) return; // already up to date
+        localVersion = row.updated_at;
+        var frame = document.getElementById('article-frame');
+        var scrollY = frame.contentWindow ? frame.contentWindow.scrollY : 0;
+        frame.srcdoc = row.html;
+        frame.onload = function() {
+          articleDoc = frame.contentDocument;
+          articleDoc.body.contentEditable = 'true';
+          articleDoc.body.style.outline = 'none';
+          injectArticleStyles();
+          injectListeners();
+          if (scrollY) frame.contentWindow.scrollTo(0, scrollY);
+          reapplyHighlights();
+        };
+      }
+    }).catch(function() {});
 }
 
 function startPolling() {
