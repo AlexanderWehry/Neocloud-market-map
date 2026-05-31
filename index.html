@@ -130,6 +130,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
       <div id="header-btns">
         <div id="sync-dot" title="Sync status"></div>
         <button class="hbtn" onclick="loadFromRemote()" title="Pull latest version">&#x21BB;</button>
+        <button class="hbtn" onclick="document.getElementById('file-input').click()" title="Upload new HTML version">Upload</button>
         <button class="hbtn" onclick="saveEdits()">Export</button>
       </div>
     </div>
@@ -471,7 +472,7 @@ pane.addEventListener('dragover', function(e){ e.preventDefault(); document.getE
 pane.addEventListener('dragleave', function(e){ if(!e.relatedTarget||!pane.contains(e.relatedTarget)) document.getElementById('drop-zone').classList.remove('drag-over'); });
 pane.addEventListener('drop', function(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); var f=e.dataTransfer.files[0]; if(f) loadFile(f); });
 
-function handleFileInput(e){ var f=e.target.files[0]; if(f) loadFile(f); }
+function handleFileInput(e){ var f=e.target.files[0]; if(f) loadFile(f); e.target.value=''; }
 
 function loadFile(file) {
   if (!file.name.match(/\.html?$/i)) { alert('Please drop an HTML file.'); return; }
