@@ -13,6 +13,17 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
 #article-pane{flex:1;overflow:hidden;position:relative;}
 #article-frame{width:100%;height:100%;border:none;display:block;}
 
+/* File tabs */
+#file-tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #d8d4cc;background:#efede8;flex-shrink:0;min-height:34px;}
+#file-tabs:empty{display:none;}
+.file-tab{display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;color:#8a8784;cursor:pointer;border-right:1px solid #d8d4cc;white-space:nowrap;border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+.file-tab:hover{color:#1a1917;background:#e8e5e0;}
+.file-tab.active{color:#1a1917;background:#f7f5f0;border-bottom-color:#1a1917;font-weight:500;}
+.file-tab-close{color:#b8b5b0;font-size:13px;line-height:1;padding:0 1px;border:none;background:none;cursor:pointer;}
+.file-tab-close:hover{color:#c0392b;}
+#add-file-tab{padding:7px 10px;font-size:15px;color:#b8b5b0;cursor:pointer;border:none;background:none;flex-shrink:0;}
+#add-file-tab:hover{color:#1a1917;}
+
 /* Drop zone */
 #drop-zone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#f7f5f0;z-index:10;}
 #drop-zone.hidden{display:none;}
@@ -135,6 +146,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
       </div>
     </div>
 
+    <div id="file-tabs"></div>
     <div id="tab-bar">
       <div class="tab active" id="tab-chat" onclick="switchTab('chat')">Claude AI</div>
       <div class="tab" id="tab-comments" onclick="switchTab('comments')">Comments <span id="comment-badge"></span></div>
@@ -179,7 +191,8 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
 <script>
 var SUPABASE_URL = "https://fehvaiqxywedxwoyjbix.supabase.co";
 var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlaHZhaXF4eXdlZHh3b3lqYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjAxMDYsImV4cCI6MjA5NTI5NjEwNn0.UqmcpsTHXllx-60PYutASfM0AcvR7iQ2asoED1pKLSE";
-var DOC_ID = "neocloud-market-map";
+var DOC_ID = "neocloud-market-map"; // updated per file
+var openFiles = {}; // filename -> {docId, title} for the switcher
 var POLL_INTERVAL = 5000;
 
 var articleDoc = null;
@@ -228,26 +241,26 @@ var isPushing = false;
 function pushDocument(html) {
   setSyncDot('syncing');
   isPushing = true;
-  // Let DB set updated_at via default; we read it back after
+  // Use a client-generated timestamp so we know exactly what we saved
+  var ts = new Date().toISOString();
   return fetch(SUPABASE_URL + "/rest/v1/document_state?id=eq." + DOC_ID, {
     method: "PATCH",
-    headers: Object.assign({}, sbHeaders(), {"Prefer": "return=representation"}),
-    body: JSON.stringify({ html: html })
-  }).then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (Array.isArray(data) && data.length > 0) {
-      // Patch succeeded — record the server timestamp
-      localVersion = data[0].updated_at;
+    headers: Object.assign({}, sbHeaders(), {"Prefer": "return=minimal"}),
+    body: JSON.stringify({ html: html, updated_at: ts })
+  }).then(function(r) {
+    if (r.status === 204) {
+      // PATCH succeeded (row existed, updated)
+      localVersion = ts;
       setSyncDot('ok');
+      return Promise.resolve();
     } else {
-      // Row didn't exist yet — insert
+      // Row may not exist — upsert via POST with on-conflict merge
       return fetch(SUPABASE_URL + "/rest/v1/document_state", {
         method: "POST",
-        headers: Object.assign({}, sbHeaders(), {"Prefer": "return=representation"}),
-        body: JSON.stringify({ id: DOC_ID, html: html })
-      }).then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (Array.isArray(d) && d.length > 0) localVersion = d[0].updated_at;
+        headers: Object.assign({}, sbHeaders(), {"Prefer": "resolution=merge-duplicates,return=minimal"}),
+        body: JSON.stringify({ id: DOC_ID, html: html, updated_at: ts })
+      }).then(function() {
+        localVersion = ts;
         setSyncDot('ok');
       });
     }
@@ -276,7 +289,7 @@ function loadFromRemote() {
 }
 
 function pollForUpdates() {
-  if (!articleDoc || isPushing) return;
+  if (!articleDoc || isPushing || isTyping) return;
   sbFetch("/rest/v1/document_state?id=eq." + DOC_ID + "&select=updated_at")
     .then(function(data) {
       if (data && data.length > 0) {
@@ -465,6 +478,96 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── File tabs ────────────────────────────────────────────────
+
+function renderFileTabs() {
+  var bar = document.getElementById('file-tabs');
+  bar.innerHTML = '';
+  Object.keys(openFiles).forEach(function(docId) {
+    var f = openFiles[docId];
+    var tab = document.createElement('div');
+    tab.className = 'file-tab' + (docId === DOC_ID ? ' active' : '');
+    tab.setAttribute('data-id', docId);
+    var label = document.createElement('span');
+    label.textContent = f.title.length > 20 ? f.title.slice(0,20)+'…' : f.title;
+    label.onclick = function() { switchToFile(docId); };
+    var close = document.createElement('button');
+    close.className = 'file-tab-close';
+    close.textContent = '×';
+    close.title = 'Close';
+    close.onclick = function(e) { e.stopPropagation(); closeFile(docId); };
+    tab.appendChild(label);
+    tab.appendChild(close);
+    bar.appendChild(tab);
+  });
+  // + button to open another file
+  var add = document.createElement('button');
+  add.id = 'add-file-tab';
+  add.title = 'Open another file';
+  add.textContent = '+';
+  add.onclick = function() { document.getElementById('file-input').click(); };
+  bar.appendChild(add);
+}
+
+// Save current doc state before switching
+var fileCache = {}; // docId -> { html, conversationHistory, localVersion, title, fileName }
+
+function switchToFile(docId) {
+  if (docId === DOC_ID) return;
+  // Cache current state
+  if (articleDoc) {
+    fileCache[DOC_ID] = {
+      html: cleanHTML('<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML),
+      history: conversationHistory.slice(),
+      localVersion: localVersion,
+      title: articleTitle,
+      fileName: currentFileName
+    };
+  }
+  DOC_ID = docId;
+  var cached = fileCache[docId];
+  if (cached) {
+    currentFileName = cached.fileName;
+    articleTitle = cached.title;
+    localVersion = cached.localVersion;
+    conversationHistory = cached.history.slice();
+    document.getElementById('sidebar-title').textContent = articleTitle;
+    loadArticleHTML(cached.html, false);
+  } else {
+    // Load from remote
+    currentFileName = openFiles[docId].title;
+    articleTitle = openFiles[docId].title;
+    document.getElementById('sidebar-title').textContent = articleTitle;
+    showLoading('Loading ' + articleTitle + '...');
+    loadFromRemote();
+  }
+  renderFileTabs();
+  document.getElementById('chat-area').innerHTML = '';
+  appendSystem('Switched to: ' + articleTitle);
+}
+
+function closeFile(docId) {
+  delete openFiles[docId];
+  delete fileCache[docId];
+  if (DOC_ID === docId) {
+    // Switch to another open file, or show drop zone
+    var remaining = Object.keys(openFiles);
+    if (remaining.length > 0) {
+      switchToFile(remaining[0]);
+    } else {
+      articleDoc = null;
+      document.getElementById('article-frame').srcdoc = '';
+      document.getElementById('drop-zone').classList.remove('hidden');
+      document.getElementById('chat-input-area').classList.add('disabled');
+      document.getElementById('comment-input-area').classList.add('disabled');
+      document.getElementById('sidebar-title').textContent = 'Collaborative Editor';
+      document.getElementById('chat-area').innerHTML = '<div class="msg msg-system">Load an HTML file to get started.</div>';
+      if (pollTimer) clearInterval(pollTimer);
+    }
+  }
+  renderFileTabs();
+}
+
 // ── File loading ──────────────────────────────────────────────
 
 var pane = document.getElementById('article-pane');
@@ -474,9 +577,14 @@ pane.addEventListener('drop', function(e){ e.preventDefault(); document.getEleme
 
 function handleFileInput(e){ var f=e.target.files[0]; if(f) loadFile(f); e.target.value=''; }
 
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'').slice(0, 60);
+}
+
 function loadFile(file) {
   if (!file.name.match(/\.html?$/i)) { alert('Please drop an HTML file.'); return; }
   currentFileName = file.name.replace(/\.html?$/i, '');
+  DOC_ID = slugify(currentFileName) || 'doc-' + Date.now();
   var r = new FileReader();
   r.onload = function(e) {
     loadArticleHTML(e.target.result, true);
@@ -507,6 +615,9 @@ function loadArticleHTML(html, isNew) {
     document.getElementById('drop-zone').classList.add('hidden');
     document.getElementById('chat-input-area').classList.remove('disabled');
     document.getElementById('comment-input-area').classList.remove('disabled');
+    // Register in open files
+    openFiles[DOC_ID] = { docId: DOC_ID, title: articleTitle || currentFileName };
+    renderFileTabs();
     if (isNew) {
       conversationHistory = [];
       document.getElementById('chat-area').innerHTML = '';
@@ -538,12 +649,21 @@ function injectListeners() {
   if (!articleDoc) return;
   articleDoc.addEventListener('mouseup', captureSelection);
   articleDoc.addEventListener('keyup', captureSelection);
-  // Auto-save on edit (debounced)
-  articleDoc.addEventListener('input', debounce(function() {
-    var html = '<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML;
-    pushDocument(cleanHTML(html));
-  }, 1500));
+  // Auto-save on edit (debounced). Also suppress polling while typing.
+  articleDoc.addEventListener('input', function() {
+    isTyping = true;
+    debouncedSave();
+  });
 }
+
+var isTyping = false;
+var debouncedSave = debounce(function() {
+  if (!articleDoc) return;
+  var html = '<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML;
+  pushDocument(cleanHTML(html)).then(function() {
+    isTyping = false;
+  });
+}, 1500);
 
 function debounce(fn, ms) {
   var t;
@@ -674,31 +794,70 @@ function showThinking(){
 }
 function hideThinking(){ var el=document.getElementById('thinking'); if(el) el.remove(); }
 
+// Block-level tags that can't live inside a <span>
+var BLOCK_TAGS = /^(table|thead|tbody|tr|td|th|ul|ol|li|div|blockquote|pre|figure|h[1-6]|p|section|article)$/i;
+
+function isBlockHTML(html) {
+  var m = html.match(/^\s*<([a-z][a-z0-9]*)/i);
+  return m && BLOCK_TAGS.test(m[1]);
+}
+
 function applyInlineEdit(newHTML) {
-  if (!articleDoc) return false;
-  if (savedRange) {
-    try {
+  if (!articleDoc || !savedRange) return false;
+  try {
+    // Find the closest block ancestor of the selection start
+    var anchor = savedRange.commonAncestorContainer;
+    if (anchor.nodeType === 3) anchor = anchor.parentNode; // text node → parent
+
+    if (isBlockHTML(newHTML)) {
+      // Block content (table, list, etc.) — replace the whole ancestor block
+      // Walk up until we're a direct child of body or a section-level element
+      var blockEl = anchor;
+      while (blockEl.parentNode && blockEl.parentNode !== articleDoc.body &&
+             !BLOCK_TAGS.test(blockEl.parentNode.nodeName)) {
+        blockEl = blockEl.parentNode;
+      }
+      // Parse the new HTML in a safe container
+      var tmp = articleDoc.createElement('div');
+      tmp.innerHTML = newHTML;
+      var newNode = tmp.firstChild;
+      // Highlight wrapper — use a div for blocks
+      var wrap = articleDoc.createElement('div');
+      wrap.className = 'claude-highlight';
+      wrap.style.display = 'contents'; // invisible wrapper
+      while (tmp.firstChild) wrap.appendChild(tmp.firstChild);
+      blockEl.parentNode.replaceChild(wrap, blockEl);
+      setTimeout(function() {
+        wrap.classList.add('claude-highlight-fade');
+        setTimeout(function() {
+          var p = wrap.parentNode;
+          if (p) { while (wrap.firstChild) p.insertBefore(wrap.firstChild, wrap); p.removeChild(wrap); }
+          pushDocument(cleanHTML('<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML));
+        }, 1500);
+      }, 2000);
+    } else {
+      // Inline content — use Range splice as before
       savedRange.deleteContents();
       var frag = savedRange.createContextualFragment(newHTML);
       var wrap = articleDoc.createElement('span');
       wrap.className = 'claude-highlight';
       wrap.appendChild(frag);
       savedRange.insertNode(wrap);
-      setTimeout(function(){
+      setTimeout(function() {
         wrap.classList.add('claude-highlight-fade');
-        setTimeout(function(){
+        setTimeout(function() {
           var p = wrap.parentNode;
-          if(p){ while(wrap.firstChild) p.insertBefore(wrap.firstChild,wrap); p.removeChild(wrap); }
-          // Push updated doc
-          var html = cleanHTML('<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML);
-          pushDocument(html);
-        },1500);
-      },2000);
-      clearSelection();
-      return true;
-    } catch(e) { console.warn('Range edit failed:', e); }
+          if (p) { while (wrap.firstChild) p.insertBefore(wrap.firstChild, wrap); p.removeChild(wrap); }
+          pushDocument(cleanHTML('<!DOCTYPE html>\n' + articleDoc.documentElement.outerHTML));
+        }, 1500);
+      }, 2000);
+    }
+    clearSelection();
+    return true;
+  } catch(e) {
+    console.warn('applyInlineEdit failed:', e);
+    return false;
   }
-  return false;
 }
 
 function sendMessage() {
@@ -715,7 +874,9 @@ function sendMessage() {
   var sys = 'You are an inline editorial assistant editing an HTML document called "' + (articleTitle||'this document') + '".\n\n'
     + 'DOCUMENT EXCERPT:\n' + bodyCtx + '\n\n'
     + 'RULES:\n'
-    + '- If the user requests an EDIT: return ONLY the replacement HTML/text — no explanation, no preamble, no code fences. Just the raw content to splice in.\n'
+    + '- If the user requests an EDIT: return ONLY the replacement HTML — no explanation, no preamble, no code fences. Just the raw HTML to splice in.\n'
+    + '- For tables: return a complete <table> element with <thead>/<tbody>/<tr>/<th>/<td> tags. Match the document\'s existing style conventions.\n'
+    + '- For inline edits (rewording, fixing text): return inline HTML or plain text only, no block wrappers.\n'
     + '- If the user asks a QUESTION or makes a non-edit request: reply conversationally in plain text.\n';
 
   if (hasSelection) {
@@ -762,6 +923,7 @@ window.addEventListener('load', function() {
       hideLoading();
       if (data && data.length > 0) {
         localVersion = data[0].updated_at;
+        currentFileName = 'neocloud-market-map';
         loadArticleHTML(data[0].html, false);
         document.getElementById('drop-zone').classList.add('hidden');
         appendSystem('Loaded saved document. Select text to edit or add comments.');
